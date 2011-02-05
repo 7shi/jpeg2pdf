@@ -40,7 +40,19 @@ namespace JPEG2PDF
                 sw.WriteLine();
                 objp.Add(fs.Position);
                 sw.WriteLine("1 0 obj");
-                sw.WriteLine("<< /Type /Page /Parent 3 0 R /Contents 2 0 R >>");
+                sw.WriteLine("<< /Type /Catalog /Pages 2 0 R >>");
+                sw.WriteLine("endobj");
+
+                sw.WriteLine();
+                objp.Add(fs.Position);
+                sw.WriteLine("2 0 obj");
+                sw.WriteLine("<< /Type /Pages /Kids [ 3 0 R ] /Count 1 /MediaBox [ 0 0 595 842] >>");
+                sw.WriteLine("endobj");
+
+                sw.WriteLine();
+                objp.Add(fs.Position);
+                sw.WriteLine("3 0 obj");
+                sw.WriteLine("<< /Type /Page /Parent 2 0 R /Contents 4 0 R >>");
                 sw.WriteLine("endobj");
 
                 var s2 = new StringWriter();
@@ -53,23 +65,11 @@ namespace JPEG2PDF
 
                 sw.WriteLine();
                 objp.Add(fs.Position);
-                sw.WriteLine("2 0 obj");
+                sw.WriteLine("4 0 obj");
                 sw.WriteLine("<< /Length {0} >>", str2.Length);
                 sw.WriteLine("stream");
                 sw.Write(str2);
                 sw.WriteLine("endstream");
-                sw.WriteLine("endobj");
-
-                sw.WriteLine();
-                objp.Add(fs.Position);
-                sw.WriteLine("3 0 obj");
-                sw.WriteLine("<< /Type /Pages /Kids [ 1 0 R ] /Count 1 /MediaBox [ 0 0 595 842] >>");
-                sw.WriteLine("endobj");
-
-                sw.WriteLine();
-                objp.Add(fs.Position);
-                sw.WriteLine("4 0 obj");
-                sw.WriteLine("<< /Type /Catalog /Pages 3 0 R >>");
                 sw.WriteLine("endobj");
 
                 sw.WriteLine();
@@ -81,7 +81,7 @@ namespace JPEG2PDF
                 foreach (var p in objp)
                     sw.WriteLine("{0:0000000000} {1:00000} n", p, 0);
                 sw.WriteLine("trailer");
-                sw.WriteLine("<< /Root 4 0 R /Size {0} >>", size);
+                sw.WriteLine("<< /Root 1 0 R /Size {0} >>", size);
                 sw.WriteLine("startxref");
                 sw.WriteLine("{0}", xref);
                 sw.WriteLine("%%EOF");

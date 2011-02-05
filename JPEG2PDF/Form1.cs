@@ -21,33 +21,43 @@ namespace JPEG2PDF
 #endif
         }
 
+        private class Args
+        {
+            public string pdf;
+            public string[] jpgs;
+        }
+
         private void button1_Click(object sender, EventArgs e)
         {
-            var path = textBox1.Text;
-            if (path == "") return;
-
-            var jpgs = Directory.GetFiles(path, "*.jpg");
-            if (jpgs.Length == 0) return;
-
-            saveFileDialog1.FileName = Path.GetFileName(textBox1.Text) + ".pdf";
-            if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
+            if (backgroundWorker1.IsBusy)
+                backgroundWorker1.CancelAsync();
+            else
             {
-                var cur = Cursor.Current;
-                Cursor.Current = Cursors.WaitCursor;
+                var path = textBox1.Text;
+                if (path == "") return;
 
-                var pdf = saveFileDialog1.FileName;
-                MakePDF(pdf, jpgs);
-                Process.Start(pdf);
+                var jpgs = Directory.GetFiles(path, "*.jpg");
+                if (jpgs.Length == 0) return;
 
-                Cursor.Current = cur;
+                saveFileDialog1.FileName = Path.GetFileName(textBox1.Text) + ".pdf";
+                if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
+                {
+                    button1.Text = "中止";
+                    var args = new Args { pdf = saveFileDialog1.FileName, jpgs = jpgs };
+                    backgroundWorker1.RunWorkerAsync(args);
+                }
             }
         }
 
-        public static void MakePDF(string pdf, string[] jpgs)
+        private void MakePDF(string pdf, string[] jpgs)
         {
             var sizes = new Size[jpgs.Length];
+            int prg = 0;
             for (int i = 0; i < jpgs.Length; i++)
             {
+                if (backgroundWorker1.CancellationPending) return;
+                int pp = i * 20 / jpgs.Length;
+                if (prg != pp) backgroundWorker1.ReportProgress(prg = pp);
                 sizes[i] = GetJpegSize(jpgs[i]);
             }
 
@@ -88,6 +98,10 @@ namespace JPEG2PDF
 
                 for (int i = 0; i < jpgs.Length; i++)
                 {
+                    if (backgroundWorker1.CancellationPending) return;
+                    int pp = 20 + i * 10 / jpgs.Length;
+                    if (prg != pp) backgroundWorker1.ReportProgress(prg = pp);
+
                     var no_p = 3 + i * 2;
                     var no_c = no_p + 1;
                     var name = "/Jpeg" + (i + 1);
@@ -121,6 +135,10 @@ namespace JPEG2PDF
 
                 for (int i = 0; i < jpgs.Length; i++)
                 {
+                    if (backgroundWorker1.CancellationPending) return;
+                    int pp = 30 + i * 70 / jpgs.Length;
+                    if (prg != pp) backgroundWorker1.ReportProgress(prg = pp);
+
                     using (var fsj = new FileStream(jpgs[i], FileMode.Open))
                     {
                         var name = "/Jpeg" + (i + 1);
@@ -190,6 +208,27 @@ namespace JPEG2PDF
                 catch { }
             }
             return Size.Empty;
+        }
+
+        private void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            var args = e.Argument as Args;
+            MakePDF(args.pdf, args.jpgs);
+            if (!backgroundWorker1.CancellationPending) e.Result = args.pdf;
+        }
+
+        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            progressBar1.Value = e.ProgressPercentage;
+        }
+
+        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            button1.Text = "作成";
+            if (e.Result != null)
+                Process.Start(e.Result as string);
+            else if (e.Error != null)
+                MessageBox.Show(this, e.ToString(), Text, MessageBoxButtons.OK, MessageBoxIcon.Exclamation);
         }
     }
 }

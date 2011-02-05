@@ -36,14 +36,15 @@ namespace JPEG2PDF
                 var path = textBox1.Text;
                 if (path == "") return;
 
-                var jpgs = Directory.GetFiles(path, "*.jpg");
-                if (jpgs.Length == 0) return;
+                var jpgs = new List<string>(Directory.GetFiles(path, "*.jpg"));
+                if (jpgs.Count == 0) return;
 
                 saveFileDialog1.FileName = Path.GetFileName(textBox1.Text) + ".pdf";
                 if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
                 {
+                    jpgs.Sort(new NumberStringComparer());
                     button1.Text = "中止";
-                    var args = new Args { pdf = saveFileDialog1.FileName, jpgs = jpgs };
+                    var args = new Args { pdf = saveFileDialog1.FileName, jpgs = jpgs.ToArray() };
                     backgroundWorker1.RunWorkerAsync(args);
                 }
             }
@@ -72,7 +73,12 @@ namespace JPEG2PDF
                 sw.WriteLine();
                 objp.Add(fs.Position);
                 sw.WriteLine("1 0 obj");
-                sw.WriteLine("<< /Type /Catalog /Pages 2 0 R >>");
+                sw.WriteLine("<<");
+                sw.WriteLine("  /Type /Catalog /Pages 2 0 R");
+#if false
+                sw.WriteLine("  /ViewerPreferences << /Direction /R2L >>");
+#endif
+                sw.WriteLine(">>");
                 sw.WriteLine("endobj");
 
                 sw.WriteLine();

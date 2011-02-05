@@ -119,6 +119,7 @@ namespace JPEG2PDF
                     sw.WriteLine("<<");
                     sw.WriteLine("  /Type /Page /Parent 2 0 R /Contents {0} 0 R", no_c);
                     sw.WriteLine("  /MediaBox [ 0 0 {0} {1} ]", sz.Width, sz.Height);
+                    if (sz.Width > sz.Height) sw.WriteLine("  /Rotate 90");
                     sw.WriteLine("  /Resources");
                     sw.WriteLine("  <<");
                     sw.WriteLine("    /ProcSet [ /PDF /ImageB /ImageC /ImageI ]");

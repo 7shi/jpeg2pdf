@@ -16,6 +16,9 @@ namespace JPEG2PDF
         public Form1()
         {
             InitializeComponent();
+#if DEBUG
+            folderBrowserDialog1.SelectedPath = @"E:\Temp";
+#endif
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -86,6 +89,12 @@ namespace JPEG2PDF
                 sw.WriteLine("{0}", xref);
                 sw.WriteLine("%%EOF");
             }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (folderBrowserDialog1.ShowDialog(this) == DialogResult.OK)
+                textBox1.Text = folderBrowserDialog1.SelectedPath;
         }
     }
 }

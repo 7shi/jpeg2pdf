@@ -108,10 +108,13 @@ namespace JPEG2PDF
                     {
                         if (buf[1] == 0xc0 && fs.Read(buf, 0, 7) == 7)
                             return new Size(buf[5] * 256 + buf[6], buf[3] * 256 + buf[4]);
-                        else if (buf[1] == 0xd8 || fs.Read(buf, 0, 2) == 2)
-                            fs.Position += buf[0] * 256 + buf[1] - 2;
-                        else
-                            break;
+                        else if (buf[1] != 0xd8)
+                        {
+                            if (fs.Read(buf, 0, 2) == 2)
+                                fs.Position += buf[0] * 256 + buf[1] - 2;
+                            else
+                                break;
+                        }
                     }
                 }
                 catch { }

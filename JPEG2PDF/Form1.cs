@@ -96,5 +96,27 @@ namespace JPEG2PDF
             if (folderBrowserDialog1.ShowDialog(this) == DialogResult.OK)
                 textBox1.Text = folderBrowserDialog1.SelectedPath;
         }
+
+        public static Size GetJpegSize(string jpg)
+        {
+            using (var fs = new FileStream(jpg, FileMode.Open))
+            {
+                try
+                {
+                    var buf = new byte[8];
+                    while (fs.Read(buf, 0, 2) == 2 && buf[0] == 0xff)
+                    {
+                        if (buf[1] == 0xc0 && fs.Read(buf, 0, 7) == 7)
+                            return new Size(buf[5] * 256 + buf[6], buf[3] * 256 + buf[4]);
+                        else if (buf[1] == 0xd8 || fs.Read(buf, 0, 2) == 2)
+                            fs.Position += buf[0] * 256 + buf[1] - 2;
+                        else
+                            break;
+                    }
+                }
+                catch { }
+            }
+            return Size.Empty;
+        }
     }
 }

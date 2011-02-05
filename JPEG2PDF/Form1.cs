@@ -23,22 +23,22 @@ namespace JPEG2PDF
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
-            {
-                var pdf = saveFileDialog1.FileName;
-                Test(pdf);
-                Process.Start(pdf);
-            }
-        }
-
-        private void Test(string pdf)
-        {
             var path = textBox1.Text;
             if (path == "") return;
 
             var jpgs = Directory.GetFiles(path, "*.jpg");
             if (jpgs.Length == 0) return;
 
+            if (saveFileDialog1.ShowDialog(this) == DialogResult.OK)
+            {
+                var pdf = saveFileDialog1.FileName;
+                Test(pdf, jpgs);
+                Process.Start(pdf);
+            }
+        }
+
+        private void Test(string pdf, string[] jpgs)
+        {
             using (var fs = new FileStream(pdf, FileMode.Create))
             using (var sw = new StreamWriter(fs) { AutoFlush = true })
             {

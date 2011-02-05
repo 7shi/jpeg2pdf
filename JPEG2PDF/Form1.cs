@@ -33,6 +33,12 @@ namespace JPEG2PDF
 
         private void Test(string pdf)
         {
+            var path = textBox1.Text;
+            if (path == "") return;
+
+            var jpgs = Directory.GetFiles(path, "*.jpg");
+            if (jpgs.Length == 0) return;
+
             using (var fs = new FileStream(pdf, FileMode.Create))
             using (var sw = new StreamWriter(fs) { AutoFlush = true })
             {
@@ -49,29 +55,47 @@ namespace JPEG2PDF
                 sw.WriteLine();
                 objp.Add(fs.Position);
                 sw.WriteLine("2 0 obj");
-                sw.WriteLine("<< /Type /Pages /Kids [ 3 0 R ] /Count 1 /MediaBox [ 0 0 595 842] >>");
+                sw.WriteLine("<< /Type /Pages /Count 1 /Kids [ 3 0 R ] >>");
                 sw.WriteLine("endobj");
 
+                var sz = GetJpegSize(jpgs[0]);
                 sw.WriteLine();
                 objp.Add(fs.Position);
                 sw.WriteLine("3 0 obj");
-                sw.WriteLine("<< /Type /Page /Parent 2 0 R /Contents 4 0 R >>");
+                sw.WriteLine("<<");
+                sw.WriteLine("  /Type /Page /Parent 2 0 R /Contents 4 0 R");
+                sw.WriteLine("  /MediaBox [ 0 0 {0} {1} ]", sz.Width, sz.Height);
+                sw.WriteLine("  /Resources");
+                sw.WriteLine("  <<");
+                sw.WriteLine("    /ProcSet [ /PDF /ImageB /ImageC /ImageI ]");
+                sw.WriteLine("    /XObject << /Obj5 5 0 R >>");
+                sw.WriteLine("  >>");
+                sw.WriteLine(">>");
                 sw.WriteLine("endobj");
-
-                var s2 = new StringWriter();
-                s2.WriteLine("q");
-                s2.WriteLine("200 0 0 283 0 0 cm");
-                //s2.WriteLine("/ObjX Do");
-                s2.WriteLine("Q");
-                s2.Close();
-                var str2 = s2.ToString();
 
                 sw.WriteLine();
                 objp.Add(fs.Position);
                 sw.WriteLine("4 0 obj");
-                sw.WriteLine("<< /Length {0} >>", str2.Length);
+                var st4 = string.Format("q {0} 0 0 {1} 0 0 cm /Obj5 Do Q", sz.Width, sz.Height);
+                sw.WriteLine("<< /Length {0} >>", st4.Length);
                 sw.WriteLine("stream");
-                sw.Write(str2);
+                sw.WriteLine(st4);
+                sw.WriteLine("endstream");
+                sw.WriteLine("endobj");
+
+                sw.WriteLine();
+                var buf = File.ReadAllBytes(jpgs[0]);
+                objp.Add(fs.Position);
+                sw.WriteLine("5 0 obj");
+                sw.WriteLine("<<");
+                sw.WriteLine("  /Type /XObject /Subtype /Image /Filter /DCTDecode");
+                sw.WriteLine("  /BitsPerComponent 8 /ColorSpace /DeviceRGB");
+                sw.WriteLine("  /Width {0} /Height {1} /Length {2}",
+                    sz.Width, sz.Height, buf.Length);
+                sw.WriteLine(">>");
+                sw.WriteLine("stream");
+                fs.Write(buf, 0, buf.Length);
+                sw.WriteLine();
                 sw.WriteLine("endstream");
                 sw.WriteLine("endobj");
 

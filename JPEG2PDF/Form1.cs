@@ -53,13 +53,15 @@ namespace JPEG2PDF
         private void MakePDF(string pdf, string[] jpgs)
         {
             var sizes = new Size[jpgs.Length];
+            var bpps = new int[jpgs.Length];
+            var devs = new[] { "", "DeviceGray", "", "DeviceRGB", "DeviceCMYK" };
             int prg = 0;
             for (int i = 0; i < jpgs.Length; i++)
             {
                 if (backgroundWorker1.CancellationPending) return;
                 int pp = i * 20 / jpgs.Length;
                 if (prg != pp) backgroundWorker1.ReportProgress(prg = pp);
-                sizes[i] = GetJpegSize(jpgs[i]);
+                sizes[i] = GetJpegInfo(jpgs[i], out bpps[i]);
             }
 
             using (var fs = new FileStream(pdf, FileMode.Create))
@@ -156,7 +158,7 @@ namespace JPEG2PDF
                         sw.WriteLine("{0} 0 obj", no_j + i);
                         sw.WriteLine("<<");
                         sw.WriteLine("  /Type /XObject /Subtype /Image /Name {0}", name);
-                        sw.WriteLine("  /Filter /DCTDecode /BitsPerComponent 8 /ColorSpace /DeviceRGB");
+                        sw.WriteLine("  /Filter /DCTDecode /BitsPerComponent 8 /ColorSpace /{0}", devs[bpps[i]]);
                         sw.WriteLine("  /Width {0} /Height {1} /Length {2}", sz.Width, sz.Height, fsj.Length);
                         sw.WriteLine(">>");
                         sw.WriteLine("stream");
@@ -192,15 +194,18 @@ namespace JPEG2PDF
                 textBox1.Text = folderBrowserDialog1.SelectedPath;
         }
 
-        public static Size GetJpegSize(string jpg)
+        public static Size GetJpegInfo(string jpg, out int bpp)
         {
             using (var fs = new FileStream(jpg, FileMode.Open))
             {
                 var buf = new byte[8];
                 while (fs.Read(buf, 0, 2) == 2 && buf[0] == 0xff)
                 {
-                    if (buf[1] == 0xc0 && fs.Read(buf, 0, 7) == 7)
+                    if (buf[1] == 0xc0 && fs.Read(buf, 0, 8) == 8)
+                    {
+                        bpp = buf[7];
                         return new Size(buf[5] * 256 + buf[6], buf[3] * 256 + buf[4]);
+                    }
                     else if (buf[1] != 0xd8)
                     {
                         if (fs.Read(buf, 0, 2) == 2)
